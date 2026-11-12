@@ -1,204 +1,150 @@
-"""Dataset sintetis untuk praktikum pengolahan citra terapan pada Teknik Fisika.
+# Pengolahan Citra Digital & Machine Learning — Bahasa Indonesia
 
-Tujuan:
-- merepresentasikan citra termal, pola speckle, dan defect material
-- mencontohkan data sintetis yang dapat dipakai untuk eksplorasi metodologis
-- bukan mewakili data eksperimen industri maupun hasil pengukuran yang valid secara ilmiah
-"""
+**Repository terbuka untuk belajar, praktikum, dan pengajaran tingkat awal–menengah (S1).** Alur utamanya: dari fisika pembentukan citra → operasi piksel → filter → segmentasi → fitur → pengenalan pola → evaluasi machine learning → proyek mini.
 
-from __future__ import annotations
+Semua materi ditulis dalam Bahasa Indonesia. Notebook dapat dijalankan di JupyterLab atau VS Code dengan Python lokal. Dataset contoh disertakan lewat paket Python standar atau generator data sintetis sehingga **tidak memerlukan akses internet saat eksekusi** sesudah dependensi terpasang.
 
-import numpy as np
-from skimage.draw import disk, line, polygon
-from skimage.filters import gaussian
+> **Status:** rilis awal v0.1.0. Modul dasar + ML klasik + demonstrasi CNN opsional. Contoh QC tablet/kolorimetri memakai data sintetis, **bukan hasil eksperimen industri atau bukti akurasi dunia nyata**.
 
+## Mulai dalam 5 menit
 
-def thermography_sintetis(
-    n_batch: int = 12,
-    per_batch: int = 16,
-    seed: int = 42,
-    size: int = 128,
-):
-    """Membuat citra termal sintetis dengan defect berukuran lokal.
+Gunakan Python **3.10 atau lebih baru** (disarankan 3.11) dan terminal pada folder utama repository.
 
-    Return:
-        images: array (n_samples, H, W)
-        labels: 0 = tanpa defect, 1 = defect
-        groups: batch ID
-    """
-    if n_batch < 2 or per_batch < 4:
-        raise ValueError("n_batch >= 2 dan per_batch >= 4 diperlukan")
+**Windows PowerShell:**
 
-    rng = np.random.default_rng(seed)
-    images, labels, groups = [], [], []
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[belajar,test]"
+jupyter lab
+```
 
-    for batch in range(n_batch):
-        base_temp = 30.0 + 5.0 * batch
-        noise_level = 0.6 + 0.15 * batch
+Jika `py -3.11` tidak tersedia, gunakan `python -m venv .venv`. Jika PowerShell memblokir aktivasi, buka terminal Command Prompt dan gunakan `.venv\Scripts\activate.bat`.
 
-        for i in range(per_batch):
-            img = np.full((size, size), base_temp, dtype=float)
+**macOS / Linux:**
 
-            # background pola tidak homogen
-            x = np.linspace(0, 1, size)
-            y = np.linspace(0, 1, size)
-            yy, xx = np.meshgrid(y, x, indexing="ij")
-            gradient = 2.5 * (xx + 0.5 * yy)
-            img += gradient * 12.0
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[belajar,test]'
+jupyter lab
+```
 
-            # defect termal berbentuk bulat atau elips
-            defect = int(i % 2 == 1)
-            cy = int(size / 2 + rng.integers(-10, 11))
-            cx = int(size / 2 + rng.integers(-10, 11))
-            radius = int(rng.integers(10, 18))
-            rr, cc = disk((cy, cx), radius, shape=img.shape)
+Lalu buka `notebooks/00_orientasi.ipynb`, jalankan sel berurutan (`Run All`). Di VS Code, buka folder repository dan pilih kernel dari `.venv`.
 
-            if defect:
-                img[rr, cc] -= 12.0 + rng.uniform(0.0, 6.0)
-                rr2, cc2 = disk((cy + 2, cx + 2), max(3, radius // 3), shape=img.shape)
-                img[rr2, cc2] -= 8.0
-            else:
-                img[rr, cc] += 1.0 + rng.uniform(0.0, 2.0)
+**Jalankan model tanpa notebook:**
 
-            img += rng.normal(0.0, noise_level, size=img.shape)
-            img = gaussian(img, sigma=1.0, preserve_range=True)
+```bash
+python scripts/latih_model.py --kasus digit
+python scripts/latih_model.py --kasus tablet
+python scripts/latih_model.py --kasus warna
+```
 
-            images.append(np.clip(img, 0, 100).astype(np.float32))
-            labels.append(defect)
-            groups.append(batch)
+Perintah tersebut mencetak metrik dan confusion matrix sebagai JSON ke terminal; *tidak* mengunggah data ataupun menghubungi API.
 
-    return np.stack(images), np.asarray(labels), np.asarray(groups)
+**Uji kualitas kode:**
 
+```bash
+python -m pytest -q
+python scripts/validasi_notebook.py
+python scripts/uji_eksekusi_notebook.py
+```
 
-def dic_sintetis(
-    n_batch: int = 12,
-    per_batch: int = 20,
-    seed: int = 42,
-    size: int = 128,
-):
-    """Membuat pola speckle sintetis untuk simulasi DIC.
+## Kurikulum: 14 sesi
 
-    Return:
-        images: array (n_samples, H, W)
-        labels: 0 = deformasi kecil, 1 = deformasi sedang
-        groups: batch ID
-    """
-    rng = np.random.default_rng(seed)
-    images, labels, groups = [], [], []
+| Sesi | Notebook | Materi utama | Keluaran pembelajaran |
+|---|---|---|---|
+| 1 | [00 Orientasi](notebooks/00_orientasi.ipynb) | Jupyter, citra dan ROI | Menjelaskan bentuk array |
+| 2 | [01 Representasi](notebooks/01_representasi.ipynb) | Sampling, bit depth, kanal | Menguji aliasing/kuantisasi |
+| 3 | [02 Histogram](notebooks/02_histogram.ipynb) | Kontras, histogram, CLAHE | Membaca perubahan distribusi |
+| 4 | [03 Filter](notebooks/03_filter.ipynb) | Gaussian, median, noise | Menggunakan PSNR terkontrol |
+| 5 | [04 Tepi](notebooks/04_tepi.ipynb) | Sobel, Canny, morfologi | Mengevaluasi hasil tepi |
+| 6 | [05 Segmentasi](notebooks/05_segmentasi.ipynb) | Otsu, label, area, centroid | Mengukur objek dari piksel |
+| 7 | [06 Frekuensi](notebooks/06_frekuensi.ipynb) | FFT 2D, filter frekuensi | Membaca domain spasial/Fourier |
+| 8 | [07 Warna](notebooks/07_warna.ipynb) | RGB, HSV, Lab, iluminasi | Menilai perubahan white balance |
+| 9 | [08 Fitur](notebooks/08_fitur.ipynb) | HOG, ekstraksi fitur | Menghubungkan gradien ke fitur ML |
+| 10 | [09 ML Digit](notebooks/09_ml_digits.ipynb) | LogReg, HOG+SVM | Evaluasi klasifikasi multikelas |
+| 11 | [10 ML Tablet](notebooks/10_ml_tablet.ipynb) | QC sintetis, fitur bentuk | Split antar-batch & ablasi |
+| 12 | [11 ML Kolorimetri](notebooks/11_ml_kolorimetri.ipynb) | RGB, patch referensi, ML | Uji generalisasi iluminasi |
+| 13 | [12 Proyek akhir](notebooks/12_proyek_akhir.ipynb) | Pipeline + GroupKFold | Laporan dan error analysis |
+| 14 | [13 CNN opsional](notebooks/13_cnn_opsional.ipynb) | Conv2D, PyTorch | Membandingkan fitur klasik dan CNN |
 
-    for batch in range(n_batch):
-        for i in range(per_batch):
-            img = np.zeros((size, size), dtype=float)
+Notebook `13` membutuhkan instalasi **opsional** PyTorch, lihat [panduan resminya](https://pytorch.org/get-started/locally/), disesuaikan dengan komputer. Semua notebook `00–12` hanya memerlukan dependensi inti dan `belajar`.
 
-            n_points = 1800
-            ys = rng.integers(0, size, n_points)
-            xs = rng.integers(0, size, n_points)
-            img[ys, xs] = rng.uniform(0.2, 1.0)
+## Studi kasus machine learning
 
-            shift = 1 + batch // 2
-            if i % 2 == 0:
-                displacement = 2.0
-            else:
-                displacement = 5.0
+| Studi kasus | Sumber data | Model dan fitur | Disiplin evaluasi |
+|---|---|---|---|
+| **Mengenali angka** | `sklearn.load_digits` (1.797 citra 8×8) | Regresi logistik piksel; SVM + HOG | Split stratified; confusion matrix dan macro-F1 |
+| **Inspeksi tablet** | Simulasi utuh, retak, tepi cacat | Fitur geometrik/intensitas + regresi logistik | Group split per batch; baseline mayoritas; ablasi |
+| **Klasifikasi warna** | Simulasi objek dengan perubahan RGB antar lampu | Fitur raw vs koreksi patch referensi | Group split per kondisi iluminasi; pembahasan koreksi |
+| **Pengenalan CNN** (opsional) | `sklearn.load_digits` | CNN PyTorch 2 konvolusi | Held-out test, hasil bergantung seed/epoch |
 
-            shifted = np.roll(img, shift=int(displacement), axis=0)
-            shifted = np.roll(shifted, shift=int(displacement * 0.7), axis=1)
+### Prinsip penting
 
-            img = img * 0.7 + shifted * 0.3
-            img += rng.normal(0.0, 0.03, size=img.shape)
+- **Evaluasi objektif:** train/test dipisahkan sebelum mengukur hasil; normalisasi untuk ML dibungkus `Pipeline` agar parameter hanya dipelajari dari train.
+- **Data leakage:** citra dari satu *batch* akuisisi tidak boleh otomatis dibagi ke train dan test; contoh sintetis menguji kondisi batch terpisah.
+- **Akuntabilitas ilmiah:** akurasi tinggi pada data sintetis *tidak* membuktikan kesiapan inspeksi industri atau pengukuran warna sesungguhnya.
+- **Reproducibility:** generator acak menggunakan seed tetap; perubahan parameter dan versi paket perlu dilaporkan.
+- **Kegagalan harus dipelajari:** jangan berhenti setelah mencetak accuracy; bahas false positive/negative dan dampaknya pada sistem fisik.
 
-            images.append(np.clip(img, 0, 1.0).astype(np.float32))
-            labels.append(int(i % 2))
-            groups.append(batch)
+## Struktur repository
 
-    return np.stack(images), np.asarray(labels), np.asarray(groups)
+```text
+image-processing-indonesia/
+├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+├── pyproject.toml
+├── requirements.txt
+├── notebooks/                 # 14 modul dengan visualisasi dan latihan
+│   ├── 00_orientasi.ipynb
+│   ├── 01_representasi.ipynb
+│   └── ...
+├── src/pengolahan_citra_id/
+│   ├── datasets.py             # Generator simulasi tablet dan patch warna
+│   ├── features.py             # Fitur bentuk, gradien, dan warna
+│   └── evaluation.py           # Split per batch, macro-F1, balanced accuracy
+├── scripts/
+│   ├── latih_model.py          # Contoh CLI ML
+│   ├── validasi_notebook.py    # Audit struktur/sintaks notebook
+│   └── uji_eksekusi_notebook.py # Smoke test seluruh sel notebook inti
+├── tests/                     # Unit tests Python
+├── docs/                      # Panduan dosen, tugas, glosarium, referensi
+├── data/README.md             # Sumber & batas interpretasi data
+└── .github/workflows/test.yml # CI pytest dan cek notebook
+```
 
+## Untuk dosen / asisten praktikum
 
-def tablet_sintetis(n_batch: int = 24, per_batch: int = 16, seed: int = 42):
-    """Bangun citra tablet utuh/cacat. Kembalikan (images, label, kelompok).
-    Versi ini tetap dipertahankan untuk kompatibilitas dengan modul existing.
-    """
-    if n_batch < 2 or per_batch < 4:
-        raise ValueError("n_batch >= 2 dan per_batch >= 4 diperlukan")
-    rng = np.random.default_rng(seed)
-    size = 96
-    images, labels, groups = [], [], []
-    for batch in range(n_batch):
-        shift = rng.uniform(-18, 18)
-        base_bg = 36 + shift / 3
-        base_fg = 182 + shift
-        for i in range(per_batch):
-            is_defect = int((i % 2) == 1)
-            cy, cx = 48 + int(rng.integers(-4, 5)), 48 + int(rng.integers(-4, 5))
-            radius = int(rng.integers(25, 30))
-            arr = rng.normal(base_bg, 3.0, (size, size))
-            rr, cc = disk((cy, cx), radius, shape=arr.shape)
-            arr[rr, cc] = rng.normal(base_fg, 5.5, len(rr))
-            if is_defect:
-                if i % 4 == 1:
-                    a = rng.uniform(0, np.pi)
-                    length = radius * 0.7
-                    y0, x0 = int(cy - length * np.sin(a)), int(cx - length * np.cos(a))
-                    y1, x1 = int(cy + length * np.sin(a)), int(cx + length * np.cos(a))
-                    lr, lc = line(y0, x0, y1, x1)
-                    for r, c in zip(lr, lc):
-                        ylow, yhigh = max(0, r - 2), min(size, r + 3)
-                        xlow, xhigh = max(0, c - 2), min(size, c + 3)
-                        arr[ylow:yhigh, xlow:xhigh] = base_bg + 8
-                else:
-                    angle = rng.uniform(-np.pi, np.pi)
-                    vx, vy = np.cos(angle), np.sin(angle)
-                    tx, ty = -vy, vx
-                    center_x, center_y = cx + radius * vx, cy + radius * vy
-                    p = np.array([
-                        [center_y - vy * 13 + ty * 12, center_x - vx * 13 + tx * 12],
-                        [center_y + vy * 13 + ty * 17, center_x + vx * 13 + tx * 17],
-                        [center_y + vy * 13 - ty * 17, center_x + vx * 13 - tx * 17],
-                    ])
-                    pr, pc = polygon(p[:, 0], p[:, 1], shape=arr.shape)
-                    arr[pr, pc] = base_bg
-            arr = gaussian(arr, sigma=0.65, preserve_range=True)
-            arr += rng.normal(0, 2.2, (size, size))
-            images.append(np.clip(arr, 0, 255).astype(np.uint8))
-            labels.append(is_defect)
-            groups.append(batch)
-    return np.stack(images), np.asarray(labels), np.asarray(groups)
+Baca [modul teori dan derivasi](docs/MODUL_TEORI.md), [panduan pengajaran](docs/PANDUAN_DOSEN.md), [rubrik penilaian](docs/TUGAS_DAN_RUBRIK.md), dan [glosarium](docs/GLOSARIUM.md). Setiap notebook berisi tujuan, ringkasan teori, kode runnable, analisis, pertanyaan HOTS, dan panduan laporan singkat. Atur sesi menjadi 2 × 50 menit dan tambah waktu mandiri untuk mini-project.
 
+## Kontribusi dan publikasi di GitHub
 
-def kolorimetri_sintetis(n_batch: int = 24, per_batch: int = 18, seed: int = 42):
-    """Citra patch warna + patch referensi abu-abu, per-batch pencahayaan berbeda."""
-    if n_batch < 2 or per_batch < 4:
-        raise ValueError("n_batch >= 2 dan per_batch >= 4 diperlukan")
-    rng = np.random.default_rng(seed)
-    images, labels, groups = [], [], []
-    colors = np.asarray([[111, 156, 104], [149, 119, 77]], dtype=float)
-    for batch in range(n_batch):
-        gain = rng.uniform(0.85, 1.15) * rng.uniform(0.70, 1.30, size=3)
-        for i in range(per_batch):
-            label = i % 2
-            img = np.full((64, 96, 3), 20.0)
-            obj = colors[label] + rng.normal(0, 6, 3)
-            ref = np.array([128., 128., 128.])
-            img[6:58, 5:62, :] = obj
-            img[12:52, 72:90, :] = ref
-            img = img * gain[None, None, :] + rng.normal(0, 2.5, img.shape)
-            images.append(np.clip(img, 0, 255).astype(np.uint8))
-            labels.append(label)
-            groups.append(batch)
-    return np.stack(images), np.asarray(labels), np.asarray(groups)
+1. Buat repository kosong di GitHub, misalnya `image-processing-indonesia`. **Jangan** centang README/License ketika membuatnya (keduanya telah ada di folder ini).
+2. Buka terminal pada folder repository ini lalu jalankan (ganti `USERNAME`):
 
+```bash
+git init
+git add .
+git commit -m "Rilis awal materi pengolahan citra berbahasa Indonesia"
+git branch -M main
+git remote add origin https://github.com/USERNAME/image-processing-indonesia.git
+git push -u origin main
+```
 
-__all__ = [
-    "thermography_sintetis",
-    "dic_sintetis",
-    "tablet_sintetis",
-    "kolorimetri_sintetis",
-]
+Autentikasi GitHub (token/SSH/Git Credential Manager) harus disiapkan pada komputer pengguna. Jangan menaruh token dalam file atau commit. Jika repo sudah terhubung GitHub, cukup gunakan `git add`, `git commit`, dan `git push` tanpa membuat remote baru.
 
+## Lisensi, data pihak ketiga, dan sumber ilmiah
 
-if __name__ == "__main__":
-    # demo kecil agar file tetap eksploratif dan dapat di-debug
-    imgs, labels, groups = thermography_sintetis(n_batch=2, per_batch=4, seed=7)
-    print("thermography_sintetis:", imgs.shape, labels.shape, groups.shape)
-    imgs2, labels2, groups2 = dic_sintetis(n_batch=2, per_batch=4, seed=7)
-    print("dic_sintetis:", imgs2.shape, labels2.shape, groups2.shape)
+Kode dan dokumentasi buatan repository ini menggunakan lisensi **MIT** (lihat `LICENSE`). Lisensi tidak otomatis berlaku untuk citra atau dataset pihak ketiga yang disediakan oleh paket pengembang. Dataset tidak disalin ke folder repository; hormati atribusi dan ketentuan pada dokumentasi sumber.
+
+Sumber pustaka dan dokumentasi resmi tersedia di [REFERENSI](docs/REFERENSI.md), termasuk scikit-image, scikit-learn, PyTorch, dan buku dasar pengolahan citra.
+
+## Pertanyaan riset yang bisa dikembangkan
+
+Apa efek perubahan pencahayaan, resolusi, noise, dan orientasi terhadap prediksi? Seberapa berbeda performa random split vs batch split? Apa kontribusi koreksi warna terhadap generalisasi? Bagaimana mengukur ketidakpastian prediksi model saat kondisi gambar berubah?
+
+**Tidak perlu API berbayar, kunci layanan, akun cloud, atau dataset sensitif.** Seluruh kode dapat dijalankan offline setelah pustaka terpasang.
