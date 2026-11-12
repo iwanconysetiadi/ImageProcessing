@@ -1,0 +1,29 @@
+# Glosarium Pengolahan Citra & Machine Learning
+
+- **Piksel:** sampel spasial citra diskret; nilai digital tidak otomatis setara luminansi fisik.
+- **ROI (Region of Interest):** bagian citra yang dianalisis.
+- **Sampling spasial:** proses mendiskretkan koordinat; frekuensi spasial di atas Nyquist dapat menghasilkan aliasing.
+- **Kuantisasi:** pemetaan intensitas kontinu ke himpunan tingkat digital terbatas.
+- **Histogram:** frekuensi nilai intensitas/warna.
+- **CLAHE:** peningkatan kontras lokal dengan batas amplifikasi histogram.
+- **PSNR:** indikator perbandingan citra terdistorsi terhadap referensi (skala logaritmik).
+- **SSIM:** metrik kesamaan struktur yang menggunakan citra referensi.
+- **Gradient/Sobel:** estimasi perubahan intensitas terhadap posisi spasial.
+- **Morfologi:** erosi, dilasi, opening, closing pada pola biner.
+- **Segmentasi:** pemisahan region objek dan latar/region lain.
+- **Otsu:** penentuan ambang global berdasarkan statistik histogram dua kelas.
+- **FFT 2-D:** transformasi untuk mewakili komponen frekuensi spasial.
+- **RGB:** kanal warna yang dipengaruhi sensor, pencahayaan, dan pemrosesan kamera.
+- **Chromaticity:** rasio warna, misalnya $r=R/(R+G+B)$ dengan definisi kanal tertentu.
+- **White balance:** penyesuaian relatif penguatan kanal agar objek netral tampak netral.
+- **HOG:** deskriptor yang menyusun histogram orientasi gradien lokal.
+- **Pipeline:** rangkaian operasi terurut yang di-fit dengan disiplin train/test.
+- **Data leakage:** informasi dari data test/masa depan/batch terkait ikut memengaruhi model selama pelatihan.
+- **Group split:** pembagian data agar anggota satu grup tidak tersebar ke train dan test.
+- **Precision:** $TP/(TP+FP)$ untuk suatu kelas positif.
+- **Recall:** $TP/(TP+FN)$ untuk suatu kelas positif.
+- **F1:** rerata harmonik precision dan recall.
+- **Macro-F1:** rerata F1 per kelas tanpa bobot jumlah sampel.
+- **Baseline:** metode pembanding sederhana yang harus dilampaui solusi kompleks.
+- **Domain shift:** perubahan distribusi kondisi data antara training dan penerapan.
+- **CNN:** jaringan saraf yang mempelajari kernel konvolusi dari data saat training.
